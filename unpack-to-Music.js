@@ -1,36 +1,50 @@
 const unzipper = require("unzipper")
 const fs = require("fs")
 
-let archives
-try {
-    archives = fs.readdirSync("music-archive")
-} catch (error) {
-    console.error("Error reading music-archive folder")
-    console.error(error)
+processNewAlbums(
+    process.env.ARCHIVE_PATH,
+    process.env.MUSIC_PATH
+).catch((error) => {
+    console.error("Error unzipping albums");
+    console.error(error);
+
+    process.exit(1);
+});
+
+function processNewAlbums(archivePath, musicPath) {
+    return new Promise((resolve, reject) => {
+        const archives = fs.readdirSync(archivePath);
+        const length = archives.length;
+        let newAlbums = [];
+
+        for (let index = 0; index < length; index++) {
+            const file = archives[index];
+            unpackAlbumToMusic(archivePath, musicPath, file)
+                .catch((error) => { reject(error.message) });
+        }
+
+        resolve();
+    })
 }
 
-console.info('Unzipping files...')
-interval = setInterval(() => { // TODO: try replacing the interval with a loop calling an async function (it speeds up the process without risking to break).
-    const file = archives.pop()
-    if (!file) {
-        console.info("Done!")
-        clearInterval(interval)
-        return
-    }
-    try {
-        const folderName = file.split(".")[0]
-        let infoMessage = "Unzipping file: " + file
-        if (!fs.existsSync(`C:/Users/Adrian/Music/${folderName}`)) {
-            fs.createReadStream(`music-archive/${file}`)
-            .pipe(unzipper.Extract({ path: `C:/Users/Adrian/Music/${folderName}` }))
-            .on("close", () => {
-                console.info(infoMessage + " - Done!")
-            })
-        } else {
-            console.info("...")
+function unpackAlbumToMusic(archivePath, musicPath, file) {
+    return new Promise((resolve, reject) => {
+        const match = file.match(/^(.*)(\.zip)$/);
+        const [name, extension] = match ? [match[1], match[2]] : ['', ''];
+
+        if (extension !== ".zip" || fs.existsSync(`${musicPath}/${name}`)) {
+            resolve(null);
         }
-    } catch (error) {
-        console.error("Error unzipping file: " + file)
-        console.error(error)
-    }
-}, 50);
+
+        try {
+            fs.createReadStream(`${archivePath}/${file}`)
+                .pipe(unzipper.Extract({ path: `${musicPath}/${name}` }))
+                .on("close", () => {
+                    resolve();
+                });
+        } catch (error) {
+
+            reject(error.message);
+        }
+    });
+}
