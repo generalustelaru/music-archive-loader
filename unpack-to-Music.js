@@ -1,6 +1,8 @@
 const unzipper = require("unzipper")
 const fs = require("fs")
 
+const logFile = fs.createWriteStream("log.txt", { flags: "w" });
+
 processNewAlbums(
     process.env.ARCHIVE_PATH,
     process.env.MUSIC_PATH
@@ -20,10 +22,10 @@ function processNewAlbums(archivePath, musicPath) {
         for (let index = 0; index < length; index++) {
             const file = archives[index];
             unpackAlbumToMusic(archivePath, musicPath, file)
-                .catch((error) => { reject(error.message) });
+                .catch((error) => { return reject(error.message) });
         }
 
-        resolve();
+        return resolve();
     })
 }
 
@@ -33,18 +35,22 @@ function unpackAlbumToMusic(archivePath, musicPath, file) {
         const [name, extension] = match ? [match[1], match[2]] : ['', ''];
 
         if (extension !== ".zip" || fs.existsSync(`${musicPath}/${name}`)) {
-            resolve(null);
+            logFile.write(`Skipping ! ${name}\n`);
+
+            return resolve();
         }
 
         try {
+            logFile.write(`Unpacking = ${name}\n`);
             fs.createReadStream(`${archivePath}/${file}`)
                 .pipe(unzipper.Extract({ path: `${musicPath}/${name}` }))
                 .on("close", () => {
-                    resolve();
+
+                    return resolve();
                 });
         } catch (error) {
 
-            reject(error.message);
+            return reject(error.message);
         }
     });
 }
