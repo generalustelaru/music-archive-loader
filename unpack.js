@@ -1,23 +1,30 @@
 const unzipper = require("unzipper")
 const fs = require("fs")
 
-const logFile = fs.createWriteStream(process.env.LOGFILE, { flags: "w" });
+const envLogfile = process.env.LOGFILE;
+const envArchivePath = process.env.ARCHIVE_PATH;
+const envMusicPath = process.env.MUSIC_PATH;
 
-processAlbums(
-    process.env.ARCHIVE_PATH,
-    process.env.MUSIC_PATH
-).catch((error) => {
-    console.error("Error unzipping albums");
-    console.error(error);
-
+if (!envLogfile || !envArchivePath || !envMusicPath) {
+    const props = { LOGFILE: envLogfile, ARCHIVE_PATH: envArchivePath, MUSIC_PATH: envMusicPath };
+    console.error("Missing environment variables!");
+    console.error(props);
     process.exit(1);
-});
+}
+
+const logFile = fs.createWriteStream(envLogfile, { flags: "w" });
+
+processAlbums(envArchivePath, envMusicPath)
+    .catch((error) => {
+        console.error("Error unzipping albums");
+        console.error(error);
+        process.exit(1);
+    });
 
 function processAlbums(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
         const archives = fs.readdirSync(inputPath);
         const length = archives.length;
-        let newAlbums = [];
 
         for (let index = 0; index < length; index++) {
             const file = archives[index];
@@ -35,15 +42,14 @@ function unpackAlbum(inputPath, outputPath, file) {
         const [name, extension] = [match[1], match[2].toLowerCase()];
 
         if (extension !== ".zip" || fs.existsSync(`${outputPath}/${name}`)) {
-
             return resolve();
         }
 
         try {
-            logFile.write(`${name}✀`);
             fs.createReadStream(`${inputPath}/${file}`)
                 .pipe(unzipper.Extract({ path: `${outputPath}/${name}` }))
                 .on("close", () => {
+                    logFile.write(`${name}✀`);
 
                     return resolve();
                 });

@@ -11,6 +11,8 @@ if (newAlbums.length > 0) {
     newAlbums.forEach(title => {
         console.log('\x1b[33m    %s\x1b[0m', title);
     });
-} else {
-    console.log('\x1b[31m%s\x1b[0m', '\nNo new albums');
+    process.exit(0);
 }
+
+console.error('\nCould not find new albums!');
+process.exit(1);
