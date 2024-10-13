@@ -1,7 +1,7 @@
 const unzipper = require("unzipper")
 const fs = require("fs")
 
-const logFile = fs.createWriteStream("log.txt", { flags: "w" });
+const logFile = fs.createWriteStream(process.env.LOGFILE, { flags: "w" });
 
 processNewAlbums(
     process.env.ARCHIVE_PATH,
@@ -31,8 +31,8 @@ function processNewAlbums(archivePath, musicPath) {
 
 function unpackAlbumToMusic(archivePath, musicPath, file) {
     return new Promise((resolve, reject) => {
-        const match = file.match(/^(.*)(\.zip)$/);
-        const [name, extension] = match ? [match[1], match[2]] : ['', ''];
+        const match = file.match(/^(.*)(\.[a-z]+)$/);
+        const [name, extension] = [match[1], match[2].toLowerCase()];
 
         if (extension !== ".zip" || fs.existsSync(`${musicPath}/${name}`)) {
 

@@ -1,7 +1,10 @@
-const fs = require("fs")
+const fs = require("fs");
 
-const newAlbums = fs.readFileSync("log.txt", "utf8").split("✀");
-newAlbums.pop()
+const newAlbums = fs
+    .readFileSync(process.env.LOGFILE, "utf8")
+    .split("✀");
+
+newAlbums.pop();
 
 if (newAlbums.length > 0) {
     console.log('\nNew albums:');
