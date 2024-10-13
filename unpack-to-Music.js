@@ -35,13 +35,12 @@ function unpackAlbumToMusic(archivePath, musicPath, file) {
         const [name, extension] = match ? [match[1], match[2]] : ['', ''];
 
         if (extension !== ".zip" || fs.existsSync(`${musicPath}/${name}`)) {
-            logFile.write(`Skipping ! ${name}\n`);
 
             return resolve();
         }
 
         try {
-            logFile.write(`Unpacking = ${name}\n`);
+            logFile.write(`${name}✀`);
             fs.createReadStream(`${archivePath}/${file}`)
                 .pipe(unzipper.Extract({ path: `${musicPath}/${name}` }))
                 .on("close", () => {
