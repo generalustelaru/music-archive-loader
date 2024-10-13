@@ -3,7 +3,7 @@ const fs = require("fs")
 
 const logFile = fs.createWriteStream(process.env.LOGFILE, { flags: "w" });
 
-processNewAlbums(
+processAlbums(
     process.env.ARCHIVE_PATH,
     process.env.MUSIC_PATH
 ).catch((error) => {
@@ -13,15 +13,15 @@ processNewAlbums(
     process.exit(1);
 });
 
-function processNewAlbums(archivePath, musicPath) {
+function processAlbums(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
-        const archives = fs.readdirSync(archivePath);
+        const archives = fs.readdirSync(inputPath);
         const length = archives.length;
         let newAlbums = [];
 
         for (let index = 0; index < length; index++) {
             const file = archives[index];
-            unpackAlbumToMusic(archivePath, musicPath, file)
+            unpackAlbum(inputPath, outputPath, file)
                 .catch((error) => { return reject(error.message) });
         }
 
@@ -29,20 +29,20 @@ function processNewAlbums(archivePath, musicPath) {
     })
 }
 
-function unpackAlbumToMusic(archivePath, musicPath, file) {
+function unpackAlbum(inputPath, outputPath, file) {
     return new Promise((resolve, reject) => {
         const match = file.match(/^(.*)(\.[a-z]+)$/);
         const [name, extension] = [match[1], match[2].toLowerCase()];
 
-        if (extension !== ".zip" || fs.existsSync(`${musicPath}/${name}`)) {
+        if (extension !== ".zip" || fs.existsSync(`${outputPath}/${name}`)) {
 
             return resolve();
         }
 
         try {
             logFile.write(`${name}✀`);
-            fs.createReadStream(`${archivePath}/${file}`)
-                .pipe(unzipper.Extract({ path: `${musicPath}/${name}` }))
+            fs.createReadStream(`${inputPath}/${file}`)
+                .pipe(unzipper.Extract({ path: `${outputPath}/${name}` }))
                 .on("close", () => {
 
                     return resolve();
