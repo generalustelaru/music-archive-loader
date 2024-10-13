@@ -1,4 +1,4 @@
 unpack:
-	node --env-file=.env unpack-to-Music.js
-	node --env-file=.env call-changes.js
+	node --env-file=.env unpack.js
+	node --env-file=.env log.js
 
