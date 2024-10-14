@@ -2,7 +2,7 @@
 
 Smol script for unpacking downloaded music albums into my music folder.
 
-## 'Instalation'
+## 'Installation'
 
 Run `npm install` to get the unzipper dependency.
 
