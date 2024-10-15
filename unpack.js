@@ -15,8 +15,8 @@ if (!envLogfile || !envArchivePath || !envMusicPath) {
 const logger = fs.createWriteStream(envLogfile, { flags: "w" });
 
 processArchives(envArchivePath, envMusicPath)
-    .then(extracted => {
-        logger.write(JSON.stringify(extracted));
+    .then(newAlbums => {
+        logger.write(JSON.stringify(newAlbums));
     })
     .catch(error => {
         console.error("Error unzipping albums");
@@ -27,7 +27,7 @@ processArchives(envArchivePath, envMusicPath)
 async function processArchives(inputPath, outputPath) {
     const archiveList = fs.readdirSync(inputPath);
     const length = archiveList.length;
-    const extracted = [];
+    const albums = [];
 
     for (let index = 0; index < length; index++) {
         const filename = archiveList[index];
@@ -35,14 +35,14 @@ async function processArchives(inputPath, outputPath) {
         try {
             const name = await extract(inputPath, outputPath, filename)
             if (name) {
-                extracted.push(name);
+                albums.push(name);
             }
         } catch (error) {
             reject(error.message)
         }
     }
 
-    return extracted;
+    return albums;
 }
 
 function extract(inputPath, outputPath, filename) {
