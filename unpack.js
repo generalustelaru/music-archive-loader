@@ -12,23 +12,27 @@ if (!envLogfile || !envArchivePath || !envMusicPath) {
     process.exit(1);
 }
 
-const logFile = fs.createWriteStream(envLogfile, { flags: "w" });
+const logger = fs.createWriteStream(envLogfile, { flags: "w" });
 
-processAlbums(envArchivePath, envMusicPath)
+processArchives(envArchivePath, envMusicPath)
     .catch((error) => {
         console.error("Error unzipping albums");
         console.error(error);
         process.exit(1);
     });
 
-function processAlbums(inputPath, outputPath) {
+function processArchives(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
-        const archives = fs.readdirSync(inputPath);
-        const length = archives.length;
+        const archiveList = fs.readdirSync(inputPath);
+        const length = archiveList.length;
 
         for (let index = 0; index < length; index++) {
-            const file = archives[index];
-            unpackAlbum(inputPath, outputPath, file)
+            const filename = archiveList[index];
+
+            extract(inputPath, outputPath, filename)
+                .then((name) => {
+                    if (name) logger.write(`${name}✀`);
+                })
                 .catch((error) => { return reject(error.message) });
         }
 
@@ -36,22 +40,20 @@ function processAlbums(inputPath, outputPath) {
     })
 }
 
-function unpackAlbum(inputPath, outputPath, file) {
+function extract(inputPath, outputPath, filename) {
     return new Promise((resolve, reject) => {
-        const match = file.match(/^(.*)(\.[a-z]+)$/);
+        const match = filename.match(/^(.*)(\.[a-z]+)$/);
         const [name, extension] = [match[1], match[2].toLowerCase()];
 
         if (extension !== ".zip" || fs.existsSync(`${outputPath}/${name}`)) {
-            return resolve();
+            return resolve(null);
         }
 
         try {
-            fs.createReadStream(`${inputPath}/${file}`)
+            fs.createReadStream(`${inputPath}/${filename}`)
                 .pipe(unzipper.Extract({ path: `${outputPath}/${name}` }))
                 .on("close", () => {
-                    logFile.write(`${name}✀`);
-
-                    return resolve();
+                    return resolve(name);
                 });
         } catch (error) {
 
