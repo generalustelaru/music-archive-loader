@@ -15,29 +15,34 @@ if (!envLogfile || !envArchivePath || !envMusicPath) {
 const logger = fs.createWriteStream(envLogfile, { flags: "w" });
 
 processArchives(envArchivePath, envMusicPath)
-    .catch((error) => {
+    .then(extracted => {
+        logger.write(JSON.stringify(extracted));
+    })
+    .catch(error => {
         console.error("Error unzipping albums");
         console.error(error);
         process.exit(1);
-    });
-
-function processArchives(inputPath, outputPath) {
-    return new Promise((resolve, reject) => {
-        const archiveList = fs.readdirSync(inputPath);
-        const length = archiveList.length;
-
-        for (let index = 0; index < length; index++) {
-            const filename = archiveList[index];
-
-            extract(inputPath, outputPath, filename)
-                .then((name) => {
-                    if (name) logger.write(`${name}✀`);
-                })
-                .catch((error) => { return reject(error.message) });
-        }
-
-        return resolve();
     })
+
+async function processArchives(inputPath, outputPath) {
+    const archiveList = fs.readdirSync(inputPath);
+    const length = archiveList.length;
+    const extracted = [];
+
+    for (let index = 0; index < length; index++) {
+        const filename = archiveList[index];
+
+        try {
+            const name = await extract(inputPath, outputPath, filename)
+            if (name) {
+                extracted.push(name);
+            }
+        } catch (error) {
+            reject(error.message)
+        }
+    }
+
+    return extracted;
 }
 
 function extract(inputPath, outputPath, filename) {
@@ -46,18 +51,18 @@ function extract(inputPath, outputPath, filename) {
         const [name, extension] = [match[1], match[2].toLowerCase()];
 
         if (extension !== ".zip" || fs.existsSync(`${outputPath}/${name}`)) {
-            return resolve(null);
+            resolve(null);
         }
 
         try {
             fs.createReadStream(`${inputPath}/${filename}`)
                 .pipe(unzipper.Extract({ path: `${outputPath}/${name}` }))
                 .on("close", () => {
-                    return resolve(name);
+                    resolve(name);
                 });
         } catch (error) {
 
-            return reject(error.message);
+            reject(error.message);
         }
     });
 }
